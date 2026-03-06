@@ -1,7 +1,6 @@
 
 from numpy.typing import NDArray
 
-# We need to have a Cubic trajectory generator
 class CubicTrajectory:
     def __init__(self, 
                  start_pos: NDArray,

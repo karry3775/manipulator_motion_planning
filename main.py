@@ -2,15 +2,14 @@ from simulation_driver import SimulationDriver
 from controller import Controller
 from motion_types import ControllerCommand
 from trajectory_generator import CubicTrajectory
-from motion_types import DriverCommand
 import numpy as np
 
 def generate_controller_command(current_joint_positions, target_joint_positions, duration_s):
     trajectory = CubicTrajectory(
         start_pos=current_joint_positions,
         end_pos=target_joint_positions,
-        start_vel=np.zeros(6),
-        end_vel=np.zeros(6),
+        start_vel=np.zeros(len(current_joint_positions)),
+        end_vel=np.zeros(len(current_joint_positions)),
         duration=duration_s
     )
 
@@ -24,10 +23,10 @@ def main():
     sim_driver.wait_for_initialization()
 
     # Create a controller 
-    controller = Controller(sim_driver)
+    controller = Controller()
     # params for controller command
     current_joint_positions = sim_driver.get_current_joint_positions()
-    target_joint_positions = np.deg2rad(np.array([90, -90, 90, 90, 90, 90]))
+    target_joint_positions = np.array([1.57, -1.57, 1.57, 1.57, 1.57, 1.8, 255])
     duration_s = 10
     controller_cmd = generate_controller_command(current_joint_positions, target_joint_positions, duration_s)
     controller.set_controller_command(controller_cmd)
@@ -40,11 +39,18 @@ def main():
     while True:
         cycle_start = sim_driver.now()
         t = cycle_start - loop_start
-        controller.update(t)
+
+        # Get current driver command
+        driver_status = sim_driver.get_status()
+        driver_cmd = controller.get_driver_cmd(driver_status, t)
+
+        # Send driver cmd
+        sim_driver.send_command(driver_cmd)
         
         # Wait until next loop
         while sim_driver.now() - cycle_start < loop_rate:
             continue
+
 if __name__ == "__main__":
     main()
 
