@@ -24,7 +24,6 @@ def main():
 
     # Create a controller 
     controller = Controller()
-    # params for controller command
     current_joint_positions = sim_driver.get_current_joint_positions()
     target_joint_positions = np.array([1.57, -1.57, 1.57, 1.57, 1.57, 1.8, 255])
     duration_s = 10
