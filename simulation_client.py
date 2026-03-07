@@ -4,6 +4,7 @@ import mujoco.viewer
 from zmq_common.utils import get_pub_socket, get_sub_socket
 from zmq_common.publisher import ZmqPublisher
 from zmq_common.subscriber import ZmqSubscriber
+from mujoco_model_manager import MujocoModelManager
 
 MS_TO_S = 1e-3
 HOST = "localhost"
@@ -13,19 +14,6 @@ SUB_PORT = 5555
 ROBOT_CMD_TOPIC = "robot_cmd"
 ROBOT_STATUS_TOPIC = "robot_status"
 
-class ModelManager:
-    def __init__(self, scene_path):
-        self.model = mujoco.MjModel.from_xml_path(scene_path)
-        self.data = mujoco.MjData(self.model)
-
-    def get_joint_positions(self):
-        return list(self.data.qpos[:7])
-
-    def get_joint_velocities(self):
-        return list(self.data.qvel[:7])
-
-    def get_joint_accelerations(self):
-        return list(self.data.qacc[:7])
 
 def main():
     pub_socket = get_pub_socket(HOST, PUB_PORT)
@@ -33,7 +21,13 @@ def main():
     robot_cmd_sub = ZmqSubscriber(sub_socket, ROBOT_CMD_TOPIC)
     robot_status_pub = ZmqPublisher(pub_socket, ROBOT_STATUS_TOPIC)
 
-    mm = ModelManager(scene_path="models/main.xml")
+    mm = MujocoModelManager(scene_path="models/main.xml")
+
+    # Set home pose
+    home = [1.5708, -1.5708, 1.5708, -1.5708, -1.5708, 0]
+    mm.data.qpos[:6] = home
+    mm.data.ctrl[:6] = home
+    mujoco.mj_forward(mm.model, mm.data)
 
     # 1. Initialize target at the starting pose
     status_publish_interval_s = 2 * MS_TO_S

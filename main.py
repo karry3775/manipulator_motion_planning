@@ -1,7 +1,8 @@
 from simulation_driver import SimulationDriver
 from controller import Controller
 from motion_types import ControllerCommand
-from trajectory_generator import CubicTrajectory
+from motion_planning.trajectory_generator import CubicTrajectory
+from mujoco_model_manager import MujocoModelManager
 import numpy as np
 
 def generate_controller_command(current_joint_positions, target_joint_positions, duration_s):
@@ -22,11 +23,21 @@ def main():
     sim_driver = SimulationDriver()
     sim_driver.wait_for_initialization()
 
+    # Lets aslo have a model manager
+    mm = MujocoModelManager(scene_path="models/main.xml")
+    qinit = [-1.5708, -1.5708, 1.5708, -1.5708, -1.5708, 0]
+
+    # Get current EE orientation from home pose as target orientation
+    T = mm.fk(qinit)
+
+    target_pos = [-0.5, -0.5, 0.3]
+    target_joint_positions = mm.ik(target_pos, target_rot=T[:3, :3], qinit=qinit)
+    target_joint_positions = np.append(target_joint_positions, 0)
+
     # Create a controller 
     controller = Controller()
     current_joint_positions = sim_driver.get_current_joint_positions()
-    target_joint_positions = np.array([1.57, -1.57, 1.57, 1.57, 1.57, 1.8, 255])
-    duration_s = 10
+    duration_s = 2
     controller_cmd = generate_controller_command(current_joint_positions, target_joint_positions, duration_s)
     controller.set_controller_command(controller_cmd)
 
