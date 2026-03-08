@@ -27,7 +27,7 @@ class MujocoModelManager:
         return list(self.data.qacc[:7])
     
     def fk(self, joint_angles):
-        self.data.qpos[:6] = joint_angles
+        self.data.qpos[:6] = joint_angles[:6]
         mujoco.mj_kinematics(self.model, self.data)
         
         site_id = self.model.site(self.ee_site).id
@@ -40,7 +40,7 @@ class MujocoModelManager:
         return T
     
     def ik(self, target_pos, target_rot=None, qinit=None, max_iter=200, tol=1e-4) -> np.ndarray:
-        q = np.array(qinit, dtype=float) if qinit is not None else np.zeros(6)
+        q = np.array(qinit[:6], dtype=float) if qinit is not None else np.zeros(6)
         site_id = self.model.site(self.ee_site).id
 
         for _ in range(max_iter):

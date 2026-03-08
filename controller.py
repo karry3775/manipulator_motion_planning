@@ -9,8 +9,11 @@ class Controller:
         self.ctrl_cmd = ctrl_cmd
 
     def get_driver_cmd(self, driver_status, t):
-        # Clamp t to traj duration
-        t = min(t, self.ctrl_cmd.trajectory.get_duration())
+        if self.ctrl_cmd is None:
+            return None
+
+        if t > self.ctrl_cmd.trajectory.get_duration():
+            return None
 
         # Compute target position, and generate driver command
         return DriverCommand(

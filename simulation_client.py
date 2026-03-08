@@ -6,6 +6,8 @@ from zmq_common.publisher import ZmqPublisher
 from zmq_common.subscriber import ZmqSubscriber
 from mujoco_model_manager import MujocoModelManager
 
+import time
+
 MS_TO_S = 1e-3
 HOST = "localhost"
 # Has to be inverse of the simulation driver
@@ -36,6 +38,8 @@ def main():
 
         last_pub_time = mm.data.time
         while viewer.is_running():
+            step_start = time.perf_counter()
+            
             # Get command
             cmd = robot_cmd_sub.recv_message()
             if cmd is not None:
@@ -56,6 +60,12 @@ def main():
                 last_pub_time = now
 
             viewer.sync()
+
+            # Throttle to real time
+            elapsed = time.perf_counter() - step_start
+            remaining = mm.model.opt.timestep - elapsed
+            if remaining > 0:
+                time.sleep(remaining)
 
 if __name__ == "__main__":
     main()
